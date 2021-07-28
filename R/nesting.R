@@ -8,6 +8,8 @@
 #' `NULL` then it is added to all.
 #' @param .data A dataset to use, if none are specified than
 #' the original dataset passed to `e_charts` is used.
+#' @param .is_link If FALSE, data will be appended to the series data. If TRUE, 
+#' data will be appended to the links object.
 #'
 #' @details For instance, \code{\link{e_funnel}} lets you pass \code{values} and \code{labels}
 #' (from your initial data.frame) which corresponds to \code{name} and \code{value} in the
@@ -57,12 +59,12 @@
 #'     fontStyle
 #'   )
 #' @export
-e_add <- function(e, param, ..., .serie = NULL, .data = NULL) {
+e_add <- function(e, param, ..., .serie = NULL, .data = NULL, .is_link = FALSE) {
   if (missing(e) || missing(param)) {
     stop("missing e or param", call. = FALSE)
   }
 
-  if(is.null(.data))
+  if (is.null(.data))
     ds <- e$x$data
   else
     ds <- map_grps_(.data, e$x$tl)
@@ -72,19 +74,36 @@ e_add <- function(e, param, ..., .serie = NULL, .data = NULL) {
       dplyr::select(...)
 
     data <- apply(data, 1, as.list)
-
-    for (j in seq_along(data)) {
-      if(!is.null(.serie) && .serie != j)
-        next
-      
-      if (!e$x$tl) {
-        e$x$opts$series[[i]]$data[[j]][[param]] <- data[[j]]
-      } else {
-        for(k in seq_along(e$x$opts$options[[i]]$series)){
-          e$x$opts$options[[i]]$series[[k]]$data[[j]][[param]] <- data[[j]]
+    
+    if (.is_link) {
+      for (j in seq_along(data)) {
+        if(!is.null(.serie) && .serie != j)
+          next
+        
+        if (!e$x$tl) {
+          e$x$opts$series[[i]]$links[[j]][[param]] <- data[[j]]
+        } else {
+          for(k in seq_along(e$x$opts$options[[i]]$links)){
+            e$x$opts$options[[i]]$series[[k]]$links[[j]][[param]] <- data[[j]]
+          }
+        }
+      }
+    } else {
+      for (j in seq_along(data)) {
+        if(!is.null(.serie) && .serie != j)
+          next
+        
+        if (!e$x$tl) {
+          e$x$opts$series[[i]]$data[[j]][[param]] <- data[[j]]
+        } else {
+          for(k in seq_along(e$x$opts$options[[i]]$series)){
+            e$x$opts$options[[i]]$series[[k]]$data[[j]][[param]] <- data[[j]]
+          }
         }
       }
     }
+
+
   }
   e
 }
